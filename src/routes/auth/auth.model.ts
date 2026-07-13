@@ -1,26 +1,6 @@
 import { z } from "zod";
-import {
-  UserStatus,
-  TypeOfVerificationCode,
-} from "src/shared/constants/auth.constant";
-
-export const UserSchema = z.object({
-  id: z.number(),
-  email: z.string().email(),
-  name: z.string().min(1).max(100),
-  password: z.string().min(8).max(100),
-  phoneNumber: z.string().min(10).max(15),
-  avatar: z.string().nullable(),
-  totpSecret: z.string().nullable(),
-  status: z.enum([UserStatus.Active, UserStatus.Inactive, UserStatus.Blocked]),
-  roleId: z.number().positive(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  createdById: z.number().nullable(),
-  updatedById: z.number().nullable(),
-  deletedAt: z.date().nullable(),
-});
-export type UserType = z.infer<typeof UserSchema>;
+import { TypeOfVerificationCode } from "src/shared/constants/auth.constant";
+import { UserSchema } from "src/shared/models/shared-user.model";
 
 export const RegisterBodySchema = UserSchema.pick({
   email: true,
@@ -28,7 +8,10 @@ export const RegisterBodySchema = UserSchema.pick({
   name: true,
   phoneNumber: true,
 })
-  .extend({ confirmPassword: z.string().min(8).max(100) })
+  .extend({
+    confirmPassword: z.string().min(8).max(100),
+    code: z.string().length(6),
+  })
   .strict()
   .superRefine(({ confirmPassword, password }, ctx) => {
     if (confirmPassword !== password) {

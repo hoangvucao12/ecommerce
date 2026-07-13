@@ -41,6 +41,9 @@ const configSchema = z.object({
 
   // Otp
   OTP_EXPIRES_IN: z.string().default("3m"),
+
+  // Resend
+  RESEND_API_KEY: z.string(),
 });
 
 const configServer = configSchema.safeParse(process.env);
