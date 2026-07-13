@@ -38,6 +38,9 @@ const configSchema = z.object({
   ADMIN_PASSWORD: z.string(),
   ADMIN_NAME: z.string(),
   ADMIN_PHONENUMBER: z.string(),
+
+  // Otp
+  OTP_EXPIRES_IN: z.string().default("3m"),
 });
 
 const configServer = configSchema.safeParse(process.env);
