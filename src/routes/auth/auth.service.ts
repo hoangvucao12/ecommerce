@@ -1,16 +1,27 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { UnprocessableEntityException } from "@nestjs/common";
 import { RolesService } from "./roles.service";
 import { HashingService } from "src/shared/services/hashing.service";
 import { AuthRepository } from "./auth.repo";
-import { RegisterBodyType, SendOtpBodyType } from "./auth.model";
+import {
+  LoginBodyType,
+  RefreshTokenBodyType,
+  RegisterBodyType,
+  SendOtpBodyType,
+} from "./auth.model";
 import { SharedUserRepository } from "src/shared/repositories/shared-user.repo";
-import { isUniqueConstraintPrismaError, generateOtp } from "src/shared/helpers";
+import {
+  isUniqueConstraintPrismaError,
+  generateOtp,
+  isNotFoundPrismaError,
+} from "src/shared/helpers";
 import { addMilliseconds } from "date-fns";
 import { TypeOfVerificationCode } from "src/shared/constants/auth.constant";
 import envConfig from "src/shared/config";
 import ms from "ms";
 import { EmailService } from "src/shared/services/email.service";
+import { TokenService } from "src/shared/services/token.service";
+import { AccessTokenPayloadCreate } from "src/shared/types/jwt.type";
 
 @Injectable()
 export class AuthService {
@@ -20,6 +31,7 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly sharedUserRepository: SharedUserRepository,
     private readonly emailService: EmailService,
+    private readonly tokenService: TokenService,
   ) {}
 
   async register(body: RegisterBodyType) {
@@ -85,7 +97,7 @@ export class AuthService {
     }
 
     const code = generateOtp();
-    const verificationCode = await this.authRepository.createVerificationCode({
+    await this.authRepository.createVerificationCode({
       email: body.email,
       code,
       type: body.type,
@@ -108,6 +120,150 @@ export class AuthService {
         },
       ]);
     }
-    return verificationCode;
+    return {
+      message: "Gửi mã OTP thành công, vui lòng kiểm tra email của bạn",
+    };
+  }
+
+  async login(body: LoginBodyType, userAgent: string, ip: string) {
+    const user = await this.authRepository.findUniqueUserIncludeRole({
+      email: body.email,
+    });
+
+    if (!user) {
+      throw new UnprocessableEntityException([
+        {
+          field: "email",
+          message: "Email không tồn tại",
+        },
+      ]);
+    }
+
+    const isPasswordValid = await this.hashingService.compare(
+      body.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnprocessableEntityException([
+        {
+          field: "password",
+          message: "Mật khẩu không đúng",
+        },
+      ]);
+    }
+
+    const device = await this.authRepository.createDevice({
+      userId: user.id,
+      userAgent,
+      ip,
+    });
+
+    const tokens = await this.generateTokens({
+      userId: user.id,
+      deviceId: device.id,
+      roleName: user.role.name,
+      roleId: user.roleId,
+    });
+
+    return tokens;
+  }
+
+  async generateTokens(payload: AccessTokenPayloadCreate) {
+    const accessToken: string = this.tokenService.signAccessToken(payload);
+    const refreshToken: string = this.tokenService.signRefreshToken({
+      userId: payload.userId,
+    });
+
+    const decodedRefreshToken =
+      await this.tokenService.verifyRefreshToken(refreshToken);
+    await this.authRepository.createRefreshToken({
+      token: refreshToken,
+      userId: payload.userId,
+      expiresAt: new Date(decodedRefreshToken.exp * 1000),
+      deviceId: payload.deviceId,
+    });
+    return { accessToken, refreshToken };
+  }
+
+  async refreshToken({
+    refreshToken,
+    userAgent,
+    ip,
+  }: RefreshTokenBodyType & { userAgent: string; ip: string }) {
+    try {
+      const { userId } =
+        await this.tokenService.verifyRefreshToken(refreshToken);
+
+      const refreshTokenInDb =
+        await this.authRepository.findUniqueRefreshTokenIncludeUserRole({
+          token: refreshToken,
+        });
+
+      if (!refreshTokenInDb) {
+        throw new UnauthorizedException([
+          {
+            field: "token",
+            message: "Refresh token không hợp lệ",
+          },
+        ]);
+      }
+
+      const $updatedDevice = this.authRepository.updateDevice(
+        refreshTokenInDb.deviceId,
+        {
+          userAgent,
+          ip,
+        },
+      );
+
+      const $deleteRefreshToken = this.authRepository.deleteRefreshToken(
+        refreshTokenInDb.token,
+      );
+
+      const $tokens = this.generateTokens({
+        userId: userId,
+        deviceId: refreshTokenInDb.deviceId,
+        roleName: refreshTokenInDb.user.role.name,
+        roleId: refreshTokenInDb.user.roleId,
+      });
+
+      const [, , tokens] = await Promise.all([
+        $updatedDevice,
+        $deleteRefreshToken,
+        $tokens,
+      ]);
+
+      return tokens;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException();
+    }
+  }
+
+  async logout(refreshToken: string) {
+    try {
+      await this.tokenService.verifyRefreshToken(refreshToken);
+
+      const deleteRefreshToken =
+        await this.authRepository.deleteRefreshToken(refreshToken);
+
+      if (!deleteRefreshToken) {
+        throw new UnauthorizedException("refresh token không hợp lệ");
+      }
+
+      await this.authRepository.updateDevice(deleteRefreshToken.deviceId, {
+        isActive: false,
+      });
+
+      return { message: "Đăng xuất thành công" };
+    } catch (error) {
+      if (isNotFoundPrismaError(error)) {
+        throw new UnauthorizedException("refresh token không hợp lệ");
+      }
+      throw new UnauthorizedException();
+    }
   }
 }

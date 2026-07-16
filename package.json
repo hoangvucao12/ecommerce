@@ -27,6 +27,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.19.3",
+    "@types/request-ip": "^0.0.41",
     "bcrypt": "^6.0.0",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
@@ -35,6 +36,7 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.2",
     "rxjs": "^7.8.1",
+    "uuid": "^14.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
