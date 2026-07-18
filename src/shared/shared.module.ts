@@ -5,6 +5,10 @@ import { SharedUserRepository } from "./repositories/shared-user.repo";
 import { EmailService } from "./services/email.service";
 import { JwtModule } from "@nestjs/jwt";
 import { TokenService } from "./services/token.service";
+import { AccessTokenGuard } from "./guards/access-token.guard";
+import { ApiKeyGuard } from "./guards/api-key.guard";
+import { AuthenticationGuard } from "./guards/authentication.guard";
+import { APP_GUARD } from "@nestjs/core";
 
 @Global() // Không cần import trong mọi module
 @Module({
@@ -14,6 +18,12 @@ import { TokenService } from "./services/token.service";
     SharedUserRepository,
     EmailService,
     TokenService,
+    AccessTokenGuard,
+    ApiKeyGuard,
+    {
+      provide: APP_GUARD,
+      useClass: AuthenticationGuard,
+    },
   ],
   exports: [
     PrismaService,

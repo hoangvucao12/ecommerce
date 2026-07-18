@@ -44,6 +44,15 @@ const configSchema = z.object({
 
   // Resend
   RESEND_API_KEY: z.string(),
+
+  // Secret API Key
+  SECRET_API_KEY: z.string(),
+
+  // Google
+  GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(),
+  GOOGLE_REDIRECT_URI: z.string(),
+  GOOGLE_FRONTEND_REDIRECT_URI: z.string(),
 });
 
 const configServer = configSchema.safeParse(process.env);
