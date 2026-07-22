@@ -53,6 +53,10 @@ const configSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_REDIRECT_URI: z.string(),
   GOOGLE_FRONTEND_REDIRECT_URI: z.string(),
+
+  // Cookie
+  COOKIE_REFRESH_TOKEN_MAX_AGE: z.string().default("7d"),
+  COOKIE_DOMAIN: z.string().optional(),
 });
 
 const configServer = configSchema.safeParse(process.env);

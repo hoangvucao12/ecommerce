@@ -17,11 +17,14 @@ export class AccessTokenGuard implements CanActivate {
       throw new UnauthorizedException("Access token is missing");
     }
     try {
-      const decoded = this.tokenService.verifyAccessToken(accessToken);
+      const decoded = await this.tokenService.verifyAccessToken(accessToken);
       request[REQUEST_USER_KEY] = decoded;
       return true;
     } catch (error) {
-      throw new UnauthorizedException("Invalid access token");
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException("Access token đã hết hạn");
+      }
+      throw new UnauthorizedException("Access token không hợp lệ");
     }
   }
 }

@@ -3,9 +3,10 @@ import {
   Post,
   Get,
   Body,
-  HttpCode,
-  HttpStatus,
   Ip,
+  Query,
+  Res,
+  Req,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import {
@@ -14,15 +15,15 @@ import {
   RegisterBodyDto,
   RegisterResponseDto,
   SendOtpBodyDto,
-  RefreshTokenBodyDto,
   RefreshTokenResponseDto,
-  LogoutBodyDto,
   GetAuthorizationUrlResponseDto,
+  ForgotPasswordBodyDto,
 } from "./auth.dto";
 import { ZodSerializerDto } from "nestjs-zod";
 import { UserAgent } from "src/shared/decorators/user-agent.decorator";
 import { MessageResponseDto } from "src/shared/dtos/response.dto";
 import { IsPublic } from "src/shared/decorators/auth.decorator";
+import type { Response, Request } from "express";
 import { GoogleService } from "./google.service";
 
 @Controller("auth")
@@ -48,37 +49,40 @@ export class AuthController {
 
   @Post("login")
   @IsPublic()
-  @HttpCode(HttpStatus.OK)
   @ZodSerializerDto(LoginResponseDto)
   login(
     @Body() Body: LoginBodyDto,
     @UserAgent() userAgent: string,
     @Ip() ip: string,
+    @Res() res: Response,
   ) {
-    return this.authService.login(Body, userAgent, ip);
+    return this.authService.login(Body, userAgent, ip, res);
   }
 
   @Post("refresh-token")
   @IsPublic()
-  @HttpCode(HttpStatus.OK)
   @ZodSerializerDto(RefreshTokenResponseDto)
   refreshToken(
-    @Body() Body: RefreshTokenBodyDto,
+    @Req() req: Request,
     @UserAgent() userAgent: string,
     @Ip() ip: string,
+    @Res() res: Response,
   ) {
-    return this.authService.refreshToken({
-      refreshToken: Body.refreshToken,
-      userAgent,
-      ip,
-    });
+    return this.authService.refreshToken(
+      {
+        req,
+        userAgent,
+        ip,
+      },
+      res,
+    );
   }
 
   @Post("logout")
-  @HttpCode(HttpStatus.OK)
+  @IsPublic()
   @ZodSerializerDto(MessageResponseDto)
-  logout(@Body() Body: LogoutBodyDto) {
-    return this.authService.logout(Body.refreshToken);
+  logout(@Req() req: Request, @Res() res: Response) {
+    return this.authService.logout(req, res);
   }
 
   @Get("google-link")
@@ -86,5 +90,22 @@ export class AuthController {
   @ZodSerializerDto(GetAuthorizationUrlResponseDto)
   getAuthorizationUrl(@UserAgent() userAgent: string, @Ip() ip: string) {
     return this.googleService.getAuthorizationUrl({ userAgent, ip });
+  }
+
+  @Get("google/callback")
+  @IsPublic()
+  googleCallback(
+    @Query("code") code: string,
+    @Query("state") state: string,
+    @Res() res: Response,
+  ) {
+    return this.authService.googleCallback(code, state, res);
+  }
+
+  @Post("forgot-password")
+  @IsPublic()
+  @ZodSerializerDto(MessageResponseDto)
+  forgotPassword(@Body() Body: ForgotPasswordBodyDto) {
+    return this.authService.forgotPassword(Body);
   }
 }
