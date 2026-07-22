@@ -10,6 +10,8 @@ import {
   LogoutBodySchema,
   GetAuthorizationUrlResponseSchema,
   ForgotPasswordBodySchema,
+  Setup2FAResponseSchema,
+  Disable2FABodySchema,
 } from "./auth.model";
 
 export class RegisterBodyDto extends createZodDto(RegisterBodySchema) {}
@@ -28,3 +30,5 @@ export class GetAuthorizationUrlResponseDto extends createZodDto(
 export class ForgotPasswordBodyDto extends createZodDto(
   ForgotPasswordBodySchema,
 ) {}
+export class Disable2FABodyDto extends createZodDto(Disable2FABodySchema) {}
+export class Setup2FAResponseDto extends createZodDto(Setup2FAResponseSchema) {}

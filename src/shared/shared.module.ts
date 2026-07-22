@@ -9,6 +9,7 @@ import { AccessTokenGuard } from "./guards/access-token.guard";
 import { ApiKeyGuard } from "./guards/api-key.guard";
 import { AuthenticationGuard } from "./guards/authentication.guard";
 import { APP_GUARD } from "@nestjs/core";
+import { TwoFactorAuthService } from "./services/2FA.service";
 
 @Global() // Không cần import trong mọi module
 @Module({
@@ -20,6 +21,7 @@ import { APP_GUARD } from "@nestjs/core";
     TokenService,
     AccessTokenGuard,
     ApiKeyGuard,
+    TwoFactorAuthService,
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
@@ -31,6 +33,7 @@ import { APP_GUARD } from "@nestjs/core";
     SharedUserRepository,
     EmailService,
     TokenService,
+    TwoFactorAuthService,
   ],
   imports: [JwtModule],
 })

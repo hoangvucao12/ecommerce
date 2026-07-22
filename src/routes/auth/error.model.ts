@@ -68,3 +68,36 @@ export const GoogleUserInfoError = new UnprocessableEntityException([
     message: "Error.FaildToGetGoogleUserInfo",
   },
 ]);
+
+//2FA
+export const TOTPAlreadyEnabledException = new UnprocessableEntityException([
+  {
+    field: "totpCode",
+    message: "Error.TOTPAlreadyEnabled",
+  },
+]);
+
+export const TOTPNotEnabledException = new UnprocessableEntityException([
+  {
+    field: "totpCode",
+    message: "Error.TOTPNotEnabled",
+  },
+]);
+
+export const InvalidTOTPAndCodeException = new UnprocessableEntityException([
+  {
+    field: "totpCode",
+    message: "Error.InvalidTOTPAndCode",
+  },
+  {
+    field: "code",
+    message: "Error.InvalidTOTPAndCode",
+  },
+]);
+
+export const InvalidTOTPException = new UnprocessableEntityException([
+  {
+    field: "totpCode",
+    message: "Error.InvalidTOTP",
+  },
+]);

@@ -35,6 +35,8 @@ export const VerificationCodeSchema = z.object({
   type: z.enum([
     TypeOfVerificationCode.Register,
     TypeOfVerificationCode.ForgotPassword,
+    TypeOfVerificationCode.Login,
+    TypeOfVerificationCode.Disable2FA,
   ]),
   expiresAt: z.date(),
   createdAt: z.date(),
@@ -48,7 +50,12 @@ export const SendOtpBodySchema = VerificationCodeSchema.pick({
 export const LoginBodySchema = UserSchema.pick({
   email: true,
   password: true,
-}).strict();
+})
+  .extend({
+    totpCode: z.string().length(6).optional(),
+    code: z.string().length(6).optional(),
+  })
+  .strict();
 
 export const LoginResponseSchema = z.object({
   accessToken: z.string(),
@@ -122,6 +129,31 @@ export const ForgotPasswordBodySchema = z
     }
   });
 
+export const Disable2FABodySchema = z
+  .object({
+    totpCode: z.string().length(6).optional(),
+    code: z.string().length(6).optional(),
+  })
+  .superRefine(({ totpCode, code }, ctx) => {
+    if ((totpCode !== undefined) === (code !== undefined)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Either totpCode or code is required, but not both",
+        path: ["totpCode"],
+      });
+      ctx.addIssue({
+        code: "custom",
+        message: "Either totpCode or code is required, but not both",
+        path: ["code"],
+      });
+    }
+  });
+
+export const Setup2FAResponseSchema = z.object({
+  secret: z.string(),
+  uri: z.string().url(),
+});
+
 export type RegisterBodyType = z.infer<typeof RegisterBodySchema>;
 export type RegisterResponseType = z.infer<typeof RegisterResponseSchema>;
 export type VerificationCodeType = z.infer<typeof VerificationCodeSchema>;
@@ -141,3 +173,5 @@ export type GetAuthorizationUrlResponseType = z.infer<
   typeof GetAuthorizationUrlResponseSchema
 >;
 export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>;
+export type Disable2FABodyType = z.infer<typeof Disable2FABodySchema>;
+export type Setup2FAResponseType = z.infer<typeof Setup2FAResponseSchema>;
