@@ -6,7 +6,7 @@ import { AuthRepository } from "./auth.repo";
 import { RolesService } from "./roles.service";
 import { HashingService } from "src/shared/services/hashing.service";
 import { v4 as uuidv4 } from "uuid";
-import { GoogleUserInfoError } from "./error.model";
+import { GoogleUserInfoError } from "./auth.error";
 import { TokenService } from "src/shared/services/token.service";
 
 @Injectable()

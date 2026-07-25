@@ -40,7 +40,7 @@ import {
   InvalidTOTPAndCodeException,
   InvalidTOTPException,
   TOTPNotEnabledException,
-} from "./error.model";
+} from "./auth.error";
 
 @Injectable()
 export class AuthService {
