@@ -13,11 +13,14 @@ export class RolesService {
       return this.clientRoleId;
     }
 
-    const role = await this.prismaService.role.findUniqueOrThrow({
-      where: {
-        name: RoleName.User,
-      },
-    });
+    const role: { id: number } = await this.prismaService.$queryRaw`  
+    SELECT id FROM "Role" WHERE name = ${RoleName.User} AND "deletedAt" IS NULL lIMIT 1`;
+
+    // const role = await this.prismaService.role.findUniqueOrThrow({
+    //   where: {
+    //     name: RoleName.User,
+    //   },
+    // });
 
     this.clientRoleId = role.id;
     return this.clientRoleId;

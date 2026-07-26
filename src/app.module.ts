@@ -7,10 +7,11 @@ import { UsersModule } from "./routes/users/users.module";
 import { ZodSerializerInterceptor } from "nestjs-zod";
 import { LanguageModule } from "./language/language.module";
 import { PermissionModule } from './permission/permission.module';
+import { RoleModule } from './role/role.module';
 import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
 
 @Module({
-  imports: [SharedModule, AuthModule, UsersModule, LanguageModule, PermissionModule],
+  imports: [SharedModule, AuthModule, UsersModule, LanguageModule, PermissionModule, RoleModule],
   controllers: [AppController],
   providers: [
     AppService,
