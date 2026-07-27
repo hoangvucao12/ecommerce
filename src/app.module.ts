@@ -6,12 +6,21 @@ import { AuthModule } from "./routes/auth/auth.module";
 import { UsersModule } from "./routes/users/users.module";
 import { ZodSerializerInterceptor } from "nestjs-zod";
 import { LanguageModule } from "./language/language.module";
-import { PermissionModule } from './permission/permission.module';
-import { RoleModule } from './role/role.module';
+import { PermissionModule } from "./permission/permission.module";
+import { RoleModule } from "./role/role.module";
+import { ProfileModule } from "./profile/profile.module";
 import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
 
 @Module({
-  imports: [SharedModule, AuthModule, UsersModule, LanguageModule, PermissionModule, RoleModule],
+  imports: [
+    SharedModule,
+    AuthModule,
+    UsersModule,
+    LanguageModule,
+    PermissionModule,
+    RoleModule,
+    ProfileModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

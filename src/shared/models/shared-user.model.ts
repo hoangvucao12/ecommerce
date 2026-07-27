@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { UserStatus } from "src/shared/constants/auth.constant";
+import { RoleSchema } from "./shared-role.model";
+import { PermissionSchema } from "./shared-permission.model";
 
 export const UserSchema = z.object({
   id: z.number(),
@@ -17,4 +19,36 @@ export const UserSchema = z.object({
   updatedById: z.number().nullable(),
   deletedAt: z.date().nullable(),
 });
+
+export const GetUserProfileResponseSchema = UserSchema.omit({
+  password: true,
+  totpSecret: true,
+}).extend({
+  role: RoleSchema.pick({
+    id: true,
+    name: true,
+  }).extend({
+    permissions: z.array(
+      PermissionSchema.pick({
+        id: true,
+        name: true,
+        module: true,
+        path: true,
+        method: true,
+      }),
+    ),
+  }),
+});
+
+export const UpdateProfileResponseSchema = UserSchema.omit({
+  password: true,
+  totpSecret: true,
+});
+
 export type UserType = z.infer<typeof UserSchema>;
+export type GetUserProfileResponseType = z.infer<
+  typeof GetUserProfileResponseSchema
+>;
+export type UpdateProfileResponseType = z.infer<
+  typeof UpdateProfileResponseSchema
+>;
