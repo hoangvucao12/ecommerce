@@ -10,7 +10,11 @@ import {
   isNotFoundPrismaError,
   isUniqueConstraintPrismaError,
 } from "src/shared/helpers";
-import { RoleAlreadyExistsException } from "./role.error";
+import {
+  ProhibitedActionOnBaseRoleException,
+  RoleAlreadyExistsException,
+} from "./role.error";
+import { RoleName } from "src/shared/constants/role.constant";
 
 @Injectable()
 export class RoleService {
@@ -55,12 +59,21 @@ export class RoleService {
     data: UpdateRoleBodyType;
   }) {
     try {
-      const role = await this.roleRepository.update({
+      const role = await this.roleRepository.findById(id);
+      if (!role) {
+        throw NotFoundRecordException;
+      }
+
+      if (RoleName.Admin === role.name) {
+        throw ProhibitedActionOnBaseRoleException;
+      }
+
+      const updatedRole = await this.roleRepository.update({
         updatedById,
         id,
         data,
       });
-      return role;
+      return updatedRole;
     } catch (error) {
       if (isNotFoundPrismaError(error)) {
         throw NotFoundRecordException;
@@ -74,6 +87,19 @@ export class RoleService {
 
   async delete(id: number) {
     try {
+      const role = await this.roleRepository.findById(id);
+      if (!role) {
+        throw NotFoundRecordException;
+      }
+      const baseRoles: string[] = [
+        RoleName.Admin,
+        RoleName.User,
+        RoleName.Seller,
+      ];
+      if (baseRoles.includes(role.name)) {
+        throw ProhibitedActionOnBaseRoleException;
+      }
+
       await this.roleRepository.delete(id);
       return {
         message: "Role deleted successfully",

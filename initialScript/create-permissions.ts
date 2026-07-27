@@ -2,6 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "src/app.module";
 import { PrismaService } from "src/shared/services/prisma.service";
 import { HTTPMethod } from "src/shared/constants/role.constant";
+import { RoleName } from "src/shared/constants/role.constant";
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -23,16 +24,19 @@ async function bootstrap() {
     path: string;
     method: keyof typeof HTTPMethod;
     name: string;
+    module: string;
   }[] = router.stack
     .map((layer) => {
       const path = layer.route?.path;
       const method = String(
         layer.route?.stack[0]?.method,
       ).toUpperCase() as keyof typeof HTTPMethod;
+      const module = String(path?.split("/")[1]).toUpperCase();
       if (layer.route) {
         return {
           path,
           method,
+          module,
           name: `${method}-${path}`,
         };
       }
@@ -79,6 +83,27 @@ async function bootstrap() {
   } else {
     console.log("No new permissions to add.");
   }
+
+  const updatedPermissionsInDb = await prismaService.permission.findMany({
+    where: { deletedAt: null },
+  });
+
+  const adminRole = await prismaService.role.findFirstOrThrow({
+    where: { name: RoleName.Admin, deletedAt: null },
+  });
+
+  await prismaService.role.update({
+    where: {
+      id: adminRole.id,
+    },
+    data: {
+      permissions: {
+        set: updatedPermissionsInDb.map((permission) => ({
+          id: permission.id,
+        })),
+      },
+    },
+  });
 
   process.exit(0);
 }

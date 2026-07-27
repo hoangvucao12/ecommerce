@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/shared/services/prisma.service";
 import {
   CreateRoleBodyType,
@@ -39,7 +39,7 @@ export class RoleRepository {
   findById(id: number): Promise<GetRoleDetailResponseType | null> {
     return this.prismaService.role.findUnique({
       where: { id, deletedAt: null },
-      include: { permissions: true },
+      include: { permissions: { where: { deletedAt: null } } },
     });
   }
 
@@ -58,7 +58,7 @@ export class RoleRepository {
     });
   }
 
-  update({
+  async update({
     updatedById,
     id,
     data,
@@ -68,6 +68,26 @@ export class RoleRepository {
     data: UpdateRoleBodyType;
   }): Promise<RoleType> {
     const { permissionIds, ...rest } = data;
+
+    if (permissionIds.length > 0) {
+      const permissions = await this.prismaService.permission.findMany({
+        where: { id: { in: permissionIds } },
+      });
+
+      const deletedPermissions = permissions.filter(
+        (permission) => permission.deletedAt,
+      );
+
+      if (deletedPermissions.length > 0) {
+        const deletedPermissionIds = deletedPermissions
+          .map((permission) => permission.id)
+          .join(", ");
+        throw new BadRequestException(
+          `Cannot update role with deleted permissions: ${deletedPermissionIds}`,
+        );
+      }
+    }
+
     return this.prismaService.role.update({
       where: { id, deletedAt: null },
       data: {
@@ -77,7 +97,7 @@ export class RoleRepository {
           ? { set: permissionIds.map((pid) => ({ id: pid })) }
           : undefined,
       },
-      include: { permissions: true },
+      include: { permissions: { where: { deletedAt: null } } },
     });
   }
 

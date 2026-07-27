@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  HttpException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import {
@@ -30,12 +31,7 @@ export class AuthenticationGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const authTypeValue = this.reflector.getAllAndOverride<
-      AUTH_TYPE_DECORATOR_PAYLOAD | undefined
-    >(AUTH_TYPE_KEY, [context.getHandler(), context.getClass()]) ?? {
-      AuthTypes: [AuthType.Bearer],
-      options: { condition: ConditionGuard.And },
-    };
+    const authTypeValue = this.getAuthTypeValue(context);
 
     const guards = authTypeValue.AuthTypes.map((authType) => {
       const guard = this.authTypeGuardMap[authType];
@@ -45,32 +41,61 @@ export class AuthenticationGuard implements CanActivate {
       return guard;
     });
 
-    let error = new UnauthorizedException();
+    return authTypeValue.options.condition === ConditionGuard.Or
+      ? this.HandleOrCondition(guards, context)
+      : this.HandleAndCondition(guards, context);
+  }
 
-    if (authTypeValue.options.condition === ConditionGuard.Or) {
-      for (const guard of guards) {
-        const canActivate = await Promise.resolve(
-          guard.canActivate(context),
-        ).catch((err) => {
-          error = err;
-          return false;
-        });
+  private getAuthTypeValue(
+    context: ExecutionContext,
+  ): AUTH_TYPE_DECORATOR_PAYLOAD {
+    return (
+      this.reflector.getAllAndOverride<AUTH_TYPE_DECORATOR_PAYLOAD | undefined>(
+        AUTH_TYPE_KEY,
+        [context.getHandler(), context.getClass()],
+      ) ?? {
+        AuthTypes: [AuthType.Bearer],
+        options: { condition: ConditionGuard.And },
+      }
+    );
+  }
+
+  private async HandleOrCondition(
+    guards: CanActivate[],
+    context: ExecutionContext,
+  ) {
+    let lastError: any = null;
+    for (const guard of guards) {
+      try {
+        const canActivate = await guard.canActivate(context);
         if (canActivate) {
           return true;
         }
+      } catch (error) {
+        lastError = error;
       }
-      throw error;
-    } else {
-      for (const guard of guards) {
-        const canActivate = await Promise.resolve(
-          guard.canActivate(context),
-        ).catch((err) => {
-          error = err;
-          return false;
-        });
+    }
+    if (lastError instanceof HttpException) {
+      throw lastError;
+    }
+    throw new UnauthorizedException();
+  }
+
+  private async HandleAndCondition(
+    guards: CanActivate[],
+    context: ExecutionContext,
+  ) {
+    for (const guard of guards) {
+      try {
+        const canActivate = await guard.canActivate(context);
         if (!canActivate) {
+          throw new UnauthorizedException();
+        }
+      } catch (error) {
+        if (error instanceof HttpException) {
           throw error;
         }
+        throw new UnauthorizedException();
       }
     }
     return true;
