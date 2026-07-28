@@ -3,11 +3,11 @@ import { google } from "googleapis";
 import envConfig from "src/shared/config";
 import { GoogleAuthStateType } from "./auth.model";
 import { AuthRepository } from "./auth.repo";
-import { RolesService } from "./roles.service";
 import { HashingService } from "src/shared/services/hashing.service";
 import { v4 as uuidv4 } from "uuid";
 import { GoogleUserInfoError } from "./auth.error";
 import { TokenService } from "src/shared/services/token.service";
+import { SharedRoleRepository } from "src/shared/repositories/shared-role.repo";
 
 @Injectable()
 export class GoogleService {
@@ -15,7 +15,7 @@ export class GoogleService {
 
   constructor(
     private readonly authRepository: AuthRepository,
-    private readonly rolesService: RolesService,
+    private readonly rolesService: SharedRoleRepository,
     private readonly hashingService: HashingService,
     private readonly tokenService: TokenService,
   ) {

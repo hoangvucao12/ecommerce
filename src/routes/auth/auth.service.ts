@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { GoogleService } from "./google.service";
-import { RolesService } from "./roles.service";
 import { HashingService } from "src/shared/services/hashing.service";
 import { TwoFactorAuthService } from "src/shared/services/2FA.service";
 import { AuthRepository } from "./auth.repo";
@@ -41,11 +40,12 @@ import {
   InvalidTOTPException,
   TOTPNotEnabledException,
 } from "./auth.error";
+import { SharedRoleRepository } from "src/shared/repositories/shared-role.repo";
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly rolesService: RolesService,
+    private readonly rolesService: SharedRoleRepository,
     private readonly hashingService: HashingService,
     private readonly authRepository: AuthRepository,
     private readonly sharedUserRepository: SharedUserRepository,
