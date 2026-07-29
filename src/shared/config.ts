@@ -57,6 +57,16 @@ const configSchema = z.object({
   // Cookie
   COOKIE_REFRESH_TOKEN_MAX_AGE: z.string().default("7d"),
   COOKIE_DOMAIN: z.string().optional(),
+
+  // Static Files
+  PREFIX_STATIC_ENDPOINT: z
+    .string()
+    .default("http://localhost:3000/media/static"),
+
+  // AWS S3 Configuration
+  S3_ACCESS_KEY: z.string(),
+  S3_SECRET_ACCESS_KEY: z.string(),
+  S3_REGION: z.string(),
 });
 
 const configServer = configSchema.safeParse(process.env);

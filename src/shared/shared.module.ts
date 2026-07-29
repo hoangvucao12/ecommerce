@@ -11,6 +11,7 @@ import { AuthenticationGuard } from "./guards/authentication.guard";
 import { APP_GUARD } from "@nestjs/core";
 import { TwoFactorAuthService } from "./services/2FA.service";
 import { SharedRoleRepository } from "./repositories/shared-role.repo";
+import { S3Service } from "./services/S3.service";
 
 @Global() // Không cần import trong mọi module
 @Module({
@@ -24,6 +25,7 @@ import { SharedRoleRepository } from "./repositories/shared-role.repo";
     ApiKeyGuard,
     TwoFactorAuthService,
     SharedRoleRepository,
+    S3Service,
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
@@ -37,6 +39,7 @@ import { SharedRoleRepository } from "./repositories/shared-role.repo";
     TokenService,
     TwoFactorAuthService,
     SharedRoleRepository,
+    S3Service,
   ],
   imports: [JwtModule],
 })
