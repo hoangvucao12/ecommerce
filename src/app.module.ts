@@ -10,6 +10,8 @@ import { RoleModule } from "./routes/role/role.module";
 import { ProfileModule } from "./routes/profile/profile.module";
 import { UserModule } from "./routes/user/user.module";
 import { MediaModule } from "./routes/media/media.module";
+import { BrandModule } from "./routes/brand/brand.module";
+import { BrandTranslationModule } from "./routes/brand/brand-translation/brand-translation.module";
 import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
 
 @Module({
@@ -22,6 +24,8 @@ import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
     ProfileModule,
     UserModule,
     MediaModule,
+    BrandModule,
+    BrandTranslationModule,
   ],
   controllers: [AppController],
   providers: [

@@ -7,19 +7,33 @@ import {
   Get,
   Param,
   Res,
+  Body,
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
-import envConfig from "src/shared/config";
 import type { Response } from "express";
 import { UPLOAD_DIR } from "src/shared/constants/other.constant";
 import * as path from "path";
 import { IsPublic } from "src/shared/decorators/auth.decorator";
+import { MediaService } from "./media.service";
+import { S3Service } from "src/shared/services/S3.service";
+import { ZodSerializerDto } from "nestjs-zod";
+import {
+  PresignedUploadFileBodyDto,
+  PresignedUploadFileResponseDto,
+  UploadFileResponseDto,
+} from "./media.dto";
 
 const ALLOWED_EXT = /\.(jpe?g|png|webp)$/i;
 
 @Controller("media")
 export class MediaController {
+  constructor(
+    private readonly mediaService: MediaService,
+    private readonly s3Service: S3Service,
+  ) {}
+
   @Post("images/upload")
+  @ZodSerializerDto(UploadFileResponseDto)
   @UseInterceptors(
     FilesInterceptor("files", 100, {
       limits: { fileSize: 5 * 1024 * 1024 },
@@ -28,16 +42,14 @@ export class MediaController {
           return cb(new BadRequestException("Invalid file type"), false);
         }
         cb(null, true);
-      }, // 5MB
+      },
     }),
   )
   upload(
     @UploadedFiles()
     files: Array<Express.Multer.File>,
   ) {
-    return files.map((file) => ({
-      url: `${envConfig.PREFIX_STATIC_ENDPOINT}/${file.filename}`,
-    }));
+    return this.mediaService.uploadFile(files);
   }
 
   @Get("static/:filename")
@@ -52,5 +64,12 @@ export class MediaController {
         });
       }
     });
+  }
+
+  @Post("images/upload/presigned-url")
+  @ZodSerializerDto(PresignedUploadFileResponseDto)
+  @IsPublic()
+  createPresignedUrl(@Body() body: PresignedUploadFileBodyDto) {
+    return this.mediaService.getPresignedUrl(body);
   }
 }
