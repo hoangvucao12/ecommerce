@@ -13,6 +13,9 @@ import { MediaModule } from "./routes/media/media.module";
 import { BrandModule } from "./routes/brand/brand.module";
 import { BrandTranslationModule } from "./routes/brand/brand-translation/brand-translation.module";
 import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
+import { AcceptLanguageResolver, I18nModule, QueryResolver } from "nestjs-i18n";
+import * as path from "path";
+import { AllLanguageResolver } from "./shared/resolvers/all-language.resolver";
 
 @Module({
   imports: [
@@ -26,6 +29,23 @@ import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
     MediaModule,
     BrandModule,
     BrandTranslationModule,
+
+    I18nModule.forRoot({
+      fallbackLanguage: "en",
+      loaderOptions: {
+        path: path.resolve("src/i18n/"),
+        watch: true,
+      },
+      typesOutputPath: path.resolve("src/i18n/generated/i18n.generated.ts"),
+      resolvers: [
+        {
+          use: QueryResolver,
+          options: ["lang"],
+        },
+        AllLanguageResolver,
+        AcceptLanguageResolver,
+      ],
+    }),
   ],
   controllers: [AppController],
   providers: [

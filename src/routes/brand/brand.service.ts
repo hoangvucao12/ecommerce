@@ -11,17 +11,27 @@ import {
   isUniqueConstraintPrismaError,
 } from "src/shared/helpers";
 import { BrandAlreadyExistsException } from "./brand.error";
+import { I18nContext, I18nService, I18nTranslation } from "nestjs-i18n";
 
 @Injectable()
 export class BrandService {
-  constructor(private readonly brandRepository: BrandRepository) {}
+  constructor(
+    private readonly brandRepository: BrandRepository,
+    private readonly i18n: I18nService<I18nTranslation>,
+  ) {}
 
   async list(pagination: GetBrandQueryType) {
-    return await this.brandRepository.list(pagination);
+    return await this.brandRepository.list(
+      pagination,
+      I18nContext.current()?.lang as string,
+    );
   }
 
   async findById(id: number) {
-    const brand = await this.brandRepository.findById(id);
+    const brand = await this.brandRepository.findById(
+      id,
+      I18nContext.current()?.lang as string,
+    );
     if (!brand) {
       throw NotFoundRecordException;
     }
@@ -55,10 +65,6 @@ export class BrandService {
     data: UpdateBrandBodyType;
   }) {
     try {
-      const brand = await this.brandRepository.findById(id);
-      if (!brand) {
-        throw NotFoundRecordException;
-      }
       return await this.brandRepository.update({
         updatedById,
         id,
@@ -77,10 +83,6 @@ export class BrandService {
 
   async delete(id: number) {
     try {
-      const brand = await this.brandRepository.findById(id);
-      if (!brand) {
-        throw NotFoundRecordException;
-      }
       await this.brandRepository.delete(id);
       return { message: "Brand deleted successfully" };
     } catch (error) {
