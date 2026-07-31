@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-import { REQUEST_USER_KEY } from "src/shared/constants/auth.constant";
-import { AccessTokenPayload } from "src/shared/types/jwt.type";
+import { REQUEST_USER_KEY } from "../constants/auth.constant";
+import { AccessTokenPayload } from "../types/jwt.type";
 
 export const ActiveUser = createParamDecorator(
   <TKey extends keyof AccessTokenPayload>(

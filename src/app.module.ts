@@ -16,6 +16,8 @@ import CustomZodValidationPipe from "./shared/pipes/custom-zod-validation.pipe";
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from "nestjs-i18n";
 import * as path from "path";
 import { AllLanguageResolver } from "./shared/resolvers/all-language.resolver";
+import { CategoryModule } from "./routes/category/category.module";
+import { CategoryTranslationModule } from "./routes/category/category-translation/category-translation.module";
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { AllLanguageResolver } from "./shared/resolvers/all-language.resolver";
     MediaModule,
     BrandModule,
     BrandTranslationModule,
+    CategoryModule,
+    CategoryTranslationModule,
 
     I18nModule.forRoot({
       fallbackLanguage: "en",
