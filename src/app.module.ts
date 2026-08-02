@@ -18,6 +18,7 @@ import * as path from "path";
 import { AllLanguageResolver } from "./shared/resolvers/all-language.resolver";
 import { CategoryModule } from "./routes/category/category.module";
 import { CategoryTranslationModule } from "./routes/category/category-translation/category-translation.module";
+import { ProductModule } from './routes/product/product.module';
 
 @Module({
   imports: [
@@ -50,6 +51,8 @@ import { CategoryTranslationModule } from "./routes/category/category-translatio
         AcceptLanguageResolver,
       ],
     }),
+
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [
