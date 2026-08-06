@@ -21,7 +21,7 @@ function generateSKUs(variants: VariantsType): UpsertSKUBodyType[] {
     value,
     price: 0,
     stock: 100,
-    images: [],
+    image: "",
   }));
 }
 
@@ -121,7 +121,7 @@ export const CreateProductBodySchema = ProductSchema.pick({
 })
   .extend({
     categories: z.array(z.coerce.number().int().positive()),
-    skus: z.array(UpsertSKUBodySchema).optional(),
+    skus: z.array(UpsertSKUBodySchema),
   })
   .strict()
   .superRefine(({ variants, skus }, ctx) => {
