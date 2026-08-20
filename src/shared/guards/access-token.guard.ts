@@ -1,17 +1,28 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
-  UnauthorizedException,
   ForbiddenException,
+  Injectable,
+  UnauthorizedException,
 } from "@nestjs/common";
-import { TokenService } from "../services/token.service";
+import { HTTPMethod } from "@prisma/client";
+
 import {
   REQUEST_ROLE_PERMISSIONS,
   REQUEST_USER_KEY,
+  UserStatus,
 } from "../constants/auth.constant";
-import { AccessTokenPayload } from "../types/jwt.type";
 import { PrismaService } from "../services/prisma.service";
+import { TokenService } from "../services/token.service";
+import { AccessTokenPayload } from "../types/jwt.type";
+
+type AuthenticatedRequest = {
+  headers: { authorization?: string };
+  method: string;
+  route?: { path?: string };
+  [REQUEST_USER_KEY]?: AccessTokenPayload;
+  [REQUEST_ROLE_PERMISSIONS]?: unknown;
+};
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -19,55 +30,81 @@ export class AccessTokenGuard implements CanActivate {
     private readonly tokenService: TokenService,
     private readonly prismaService: PrismaService,
   ) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const decoded = await this.extractAndValidateAccessToken(request);
     await this.validateUserPermissions(decoded, request);
     return true;
   }
 
   private async extractAndValidateAccessToken(
-    request: any,
+    request: AuthenticatedRequest,
   ): Promise<AccessTokenPayload> {
     const accessToken = this.extractAccessTokenFromHeader(request);
     try {
-      const decoded = await this.tokenService.verifyAccessToken(accessToken);
-      request[REQUEST_USER_KEY] = decoded;
-      return decoded;
+      return await this.tokenService.verifyAccessToken(accessToken);
     } catch {
       throw new UnauthorizedException("Access token không hợp lệ");
     }
   }
 
-  private extractAccessTokenFromHeader(request: any): string {
-    const accessToken = request.headers["authorization"]?.split(" ")[1];
-    if (!accessToken) {
-      throw new UnauthorizedException("Access token is missing");
+  private extractAccessTokenFromHeader(request: AuthenticatedRequest): string {
+    const [scheme, accessToken, extra] =
+      request.headers.authorization?.split(" ") ?? [];
+    if (scheme?.toLowerCase() !== "bearer" || !accessToken || extra) {
+      throw new UnauthorizedException("Thiếu Bearer access token");
     }
     return accessToken;
   }
 
   private async validateUserPermissions(
     decoded: AccessTokenPayload,
-    request: any,
+    request: AuthenticatedRequest,
   ): Promise<void> {
-    const roleId = decoded.roleId;
-    const path = request.route.path;
-    const method = request.method;
-    const role = await this.prismaService.role
-      .findUniqueOrThrow({
-        where: { id: roleId, deletedAt: null },
-        include: { permissions: { where: { deletedAt: null, path, method } } },
-      })
-      .catch(() => {
-        throw new ForbiddenException("Role không tồn tại");
-      });
-    const canAccess = role.permissions.length > 0;
-    if (!canAccess) {
+    const path = request.route?.path;
+    if (!path) {
+      throw new ForbiddenException("Không xác định được tài nguyên truy cập");
+    }
+
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        id: decoded.userId,
+        deletedAt: null,
+        status: UserStatus.Active,
+        devices: { some: { id: decoded.deviceId, isActive: true } },
+      },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              where: {
+                deletedAt: null,
+                path,
+                method: request.method as HTTPMethod,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user || user.role.deletedAt || !user.role.isActive) {
+      throw new ForbiddenException(
+        "Tài khoản hoặc vai trò không còn hoạt động",
+      );
+    }
+    if (user.role.permissions.length === 0) {
       throw new ForbiddenException(
         "Bạn không có quyền truy cập vào tài nguyên này",
       );
     }
-    request[REQUEST_ROLE_PERMISSIONS] = role;
+
+    request[REQUEST_USER_KEY] = {
+      ...decoded,
+      roleId: user.roleId,
+      roleName: user.role.name,
+    };
+    request[REQUEST_ROLE_PERMISSIONS] = user.role;
   }
 }

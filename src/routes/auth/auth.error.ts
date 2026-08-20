@@ -1,4 +1,8 @@
-import { UnprocessableEntityException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  UnauthorizedException,
+  UnprocessableEntityException,
+} from "@nestjs/common";
 
 //OTP
 export const InvalidOTPException = new UnprocessableEntityException([
@@ -61,11 +65,39 @@ export const UnauthorizedAccessException = new UnprocessableEntityException([
   },
 ]);
 
+export const InvalidCredentialsException = new UnauthorizedException([
+  {
+    field: "credentials",
+    message: "Error.InvalidCredentials",
+  },
+]);
+
+export const InvalidRefreshTokenException = new UnauthorizedException([
+  {
+    field: "refreshToken",
+    message: "Error.InvalidRefreshToken",
+  },
+]);
+
+export const AccountUnavailableException = new ForbiddenException([
+  {
+    field: "account",
+    message: "Error.AccountUnavailable",
+  },
+]);
+
 //Google
 export const GoogleUserInfoError = new UnprocessableEntityException([
   {
     field: "google",
     message: "Error.FaildToGetGoogleUserInfo",
+  },
+]);
+
+export const GoogleAuthenticationException = new UnauthorizedException([
+  {
+    field: "google",
+    message: "Error.GoogleAuthenticationFailed",
   },
 ]);
 

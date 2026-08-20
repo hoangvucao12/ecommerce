@@ -4,8 +4,9 @@ import { UserType } from "../models/shared-user.model";
 import { RoleType } from "../models/shared-role.model";
 import { PermissionType } from "../models/shared-permission.model";
 
-type WhereUniqueUserObject =
-  { email: string; [key: string]: any } | { id: number; [key: string]: any };
+type UserLookup = ({ email: string } | { id: number }) & {
+  deletedAt?: null;
+};
 
 type UserIncludeRolePermissionType = UserType & {
   role: RoleType & { permissions: PermissionType[] };
@@ -15,19 +16,17 @@ type UserIncludeRolePermissionType = UserType & {
 export class SharedUserRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findUnique(
-    uniqueObject: WhereUniqueUserObject,
-  ): Promise<UserType | null> {
+  async findUnique(uniqueObject: UserLookup): Promise<UserType | null> {
     return await this.prismaService.user.findFirst({
-      where: uniqueObject,
+      where: { ...uniqueObject, deletedAt: null },
     });
   }
 
   findUniqueIncludeRolePermission(
-    uniqueObject: WhereUniqueUserObject,
+    uniqueObject: UserLookup,
   ): Promise<UserIncludeRolePermissionType | null> {
     return this.prismaService.user.findFirst({
-      where: uniqueObject,
+      where: { ...uniqueObject, deletedAt: null },
       include: {
         role: {
           include: {

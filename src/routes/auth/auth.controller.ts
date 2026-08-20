@@ -1,130 +1,126 @@
 import {
-  Controller,
-  Post,
-  Get,
   Body,
+  Controller,
+  Get,
   Ip,
+  Post,
   Query,
-  Res,
   Req,
+  Res,
 } from "@nestjs/common";
-import { AuthService } from "./auth.service";
+import type { Request, Response } from "express";
+import { ZodSerializerDto } from "nestjs-zod";
+
+import { ActiveUser } from "src/shared/decorators/active-user.decorator";
+import { IsPublic } from "src/shared/decorators/auth.decorator";
+import { UserAgent } from "src/shared/decorators/user-agent.decorator";
+import { MessageResponseDto } from "src/shared/dtos/response.dto";
+
 import {
+  Disable2FABodyDto,
+  ForgotPasswordBodyDto,
+  GetAuthorizationUrlResponseDto,
+  GoogleCallbackQueryDto,
   LoginBodyDto,
-  LoginResponseDto,
   RegisterBodyDto,
   RegisterResponseDto,
   SendOtpBodyDto,
-  RefreshTokenResponseDto,
-  GetAuthorizationUrlResponseDto,
-  ForgotPasswordBodyDto,
   Setup2FAResponseDto,
-  Disable2FABodyDto,
-} from "./auth.dto";
-import { ZodSerializerDto } from "nestjs-zod";
-import { UserAgent } from "src/shared/decorators/user-agent.decorator";
-import { MessageResponseDto } from "src/shared/dtos/response.dto";
-import { IsPublic } from "src/shared/decorators/auth.decorator";
-import type { Response, Request } from "express";
-import { GoogleService } from "./google.service";
-import { EmptyBodyDto } from "src/shared/dtos/request.dto";
-import { ActiveUser } from "src/shared/decorators/active-user.decorator";
+  TokenResponseDto,
+} from "./dto/auth.dto";
+import { AuthService } from "./services/auth.service";
+import { GoogleAuthService } from "./services/google-auth.service";
 
 @Controller("auth")
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly googleService: GoogleService,
+    private readonly googleAuthService: GoogleAuthService,
   ) {}
 
   @Post("register")
   @IsPublic()
   @ZodSerializerDto(RegisterResponseDto)
-  register(@Body() Body: RegisterBodyDto) {
-    return this.authService.register(Body);
+  register(@Body() body: RegisterBodyDto) {
+    return this.authService.register(body);
   }
 
   @Post("otp")
   @IsPublic()
   @ZodSerializerDto(MessageResponseDto)
-  sendOtp(@Body() Body: SendOtpBodyDto) {
-    return this.authService.sendOtp(Body);
+  sendOtp(@Body() body: SendOtpBodyDto) {
+    return this.authService.sendOtp(body);
   }
 
   @Post("login")
   @IsPublic()
-  @ZodSerializerDto(LoginResponseDto)
+  @ZodSerializerDto(TokenResponseDto)
   login(
-    @Body() Body: LoginBodyDto,
+    @Body() body: LoginBodyDto,
     @UserAgent() userAgent: string,
     @Ip() ip: string,
-    @Res() res: Response,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.login(Body, userAgent, ip, res);
+    return this.authService.login(body, { userAgent, ip }, response);
   }
 
   @Post("refresh-token")
   @IsPublic()
-  @ZodSerializerDto(RefreshTokenResponseDto)
+  @ZodSerializerDto(TokenResponseDto)
   refreshToken(
-    @Req() req: Request,
+    @Req() request: Request,
     @UserAgent() userAgent: string,
     @Ip() ip: string,
-    @Res() res: Response,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.refreshToken(
-      {
-        req,
-        userAgent,
-        ip,
-      },
-      res,
-    );
+    return this.authService.refreshToken(request, { userAgent, ip }, response);
   }
 
   @Post("logout")
   @IsPublic()
   @ZodSerializerDto(MessageResponseDto)
-  logout(@Req() req: Request, @Res() res: Response) {
-    return this.authService.logout(req, res);
+  logout(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.logout(request, response);
   }
 
   @Get("google-link")
   @IsPublic()
   @ZodSerializerDto(GetAuthorizationUrlResponseDto)
   getAuthorizationUrl(@UserAgent() userAgent: string, @Ip() ip: string) {
-    return this.googleService.getAuthorizationUrl({ userAgent, ip });
+    return this.googleAuthService.getAuthorizationUrl({ userAgent, ip });
   }
 
   @Get("google/callback")
   @IsPublic()
   googleCallback(
-    @Query("code") code: string,
-    @Query("state") state: string,
-    @Res() res: Response,
+    @Query() query: GoogleCallbackQueryDto,
+    @Res() response: Response,
   ) {
-    return this.authService.googleCallback(code, state, res);
+    return this.authService.googleCallback(query.code, query.state, response);
   }
 
   @Post("forgot-password")
   @IsPublic()
   @ZodSerializerDto(MessageResponseDto)
-  forgotPassword(@Body() Body: ForgotPasswordBodyDto) {
-    return this.authService.forgotPassword(Body);
+  forgotPassword(@Body() body: ForgotPasswordBodyDto) {
+    return this.authService.forgotPassword(body);
   }
 
   @Post("2fa/setup")
   @ZodSerializerDto(Setup2FAResponseDto)
-  setup2FA(@Body() _: EmptyBodyDto, @ActiveUser("userId") userId: number) {
+  setup2FA(@ActiveUser("userId") userId: number) {
     return this.authService.setup2FA(userId);
   }
 
   @Post("2fa/disable")
   @ZodSerializerDto(MessageResponseDto)
   disable2FA(
-    @Body() Body: Disable2FABodyDto,
+    @Body() body: Disable2FABodyDto,
     @ActiveUser("userId") userId: number,
   ) {
-    return this.authService.disable2FA(Body, userId);
+    return this.authService.disable2FA(body, userId);
   }
 }

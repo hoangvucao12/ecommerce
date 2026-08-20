@@ -16,7 +16,9 @@ describe("CategoryTranslationService", () => {
       ],
     }).compile();
 
-    service = module.get<CategoryTranslationService>(CategoryTranslationService);
+    service = module.get<CategoryTranslationService>(
+      CategoryTranslationService,
+    );
   });
 
   it("should be defined", () => {

@@ -42,8 +42,8 @@ export class AuthenticationGuard implements CanActivate {
     });
 
     return authTypeValue.options.condition === ConditionGuard.Or
-      ? this.HandleOrCondition(guards, context)
-      : this.HandleAndCondition(guards, context);
+      ? this.handleOrCondition(guards, context)
+      : this.handleAndCondition(guards, context);
   }
 
   private getAuthTypeValue(
@@ -60,11 +60,11 @@ export class AuthenticationGuard implements CanActivate {
     );
   }
 
-  private async HandleOrCondition(
+  private async handleOrCondition(
     guards: CanActivate[],
     context: ExecutionContext,
   ) {
-    let lastError: any = null;
+    let lastError: unknown = null;
     for (const guard of guards) {
       try {
         const canActivate = await guard.canActivate(context);
@@ -81,7 +81,7 @@ export class AuthenticationGuard implements CanActivate {
     throw new UnauthorizedException();
   }
 
-  private async HandleAndCondition(
+  private async handleAndCondition(
     guards: CanActivate[],
     context: ExecutionContext,
   ) {

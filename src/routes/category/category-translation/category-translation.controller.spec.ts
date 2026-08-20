@@ -16,7 +16,9 @@ describe("CategoryTranslationController", () => {
       ],
     }).compile();
 
-    controller = module.get<CategoryTranslationController>(CategoryTranslationController);
+    controller = module.get<CategoryTranslationController>(
+      CategoryTranslationController,
+    );
   });
 
   it("should be defined", () => {

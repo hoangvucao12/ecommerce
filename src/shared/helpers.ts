@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { randomInt } from "crypto";
+import { randomInt, randomUUID } from "crypto";
 import * as path from "path";
-import { v4 as uuid } from "uuid";
 
 export function isUniqueConstraintPrismaError(
   error: any,
@@ -36,5 +35,5 @@ export const generateOtp = () => {
 
 export const generateRandomFileName = (fileName: string) => {
   const ext = path.extname(fileName);
-  return `${uuid()}${ext}`;
+  return `${randomUUID()}${ext}`;
 };

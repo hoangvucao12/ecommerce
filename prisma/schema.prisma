@@ -132,13 +132,13 @@ model Device {
 model VerificationCode {
   id    Int                  @id @default(autoincrement())
   email String               @db.VarChar(500)
-  code  String               @db.VarChar(50)
+  code  String               @db.VarChar(100)
   type  VerificationCodeType
 
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  @@unique([email, code, type])
+  @@unique([email, type])
   @@index([expiresAt])
 }
 

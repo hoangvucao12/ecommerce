@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { LanguageController } from './language.controller';
-import { LanguageService } from './language.service';
+import { Test, TestingModule } from "@nestjs/testing";
+import { LanguageController } from "./language.controller";
+import { LanguageService } from "./language.service";
 
-describe('LanguageController', () => {
+describe("LanguageController", () => {
   let controller: LanguageController;
 
   beforeEach(async () => {
@@ -14,7 +14,7 @@ describe('LanguageController', () => {
     controller = module.get<LanguageController>(LanguageController);
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(controller).toBeDefined();
   });
 });

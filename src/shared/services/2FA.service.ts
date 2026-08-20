@@ -5,7 +5,7 @@ import * as OTPAuth from "otpauth";
 export class TwoFactorAuthService {
   private createTOTP(email: string, secret?: string) {
     return new OTPAuth.TOTP({
-      issuer: "Ecommerce",
+      issuer: "Sodaka",
       label: email,
       algorithm: "SHA1",
       digits: 6,

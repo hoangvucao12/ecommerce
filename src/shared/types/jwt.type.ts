@@ -12,9 +12,17 @@ export interface AccessTokenPayload extends AccessTokenPayloadCreate {
 
 export interface RefreshTokenPayloadCreate {
   userId: number;
+  deviceId: number;
 }
 
 export interface RefreshTokenPayload extends RefreshTokenPayloadCreate {
+  exp: number;
+  iat: number;
+}
+
+export interface OAuthStatePayload {
+  userAgent: string;
+  ip: string;
   exp: number;
   iat: number;
 }

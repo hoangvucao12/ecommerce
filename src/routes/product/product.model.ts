@@ -26,8 +26,8 @@ function generateSKUs(variants: VariantsType): UpsertSKUBodyType[] {
 }
 
 export const VariantSchema = z.object({
-  value: z.string(),
-  options: z.array(z.string()),
+  value: z.string().trim().toLowerCase(),
+  options: z.array(z.string().trim().toLowerCase()),
 });
 
 export const VariantsSchema = z
@@ -61,9 +61,9 @@ export const VariantsSchema = z
 export const ProductSchema = z.object({
   id: z.number(),
   publishedAt: z.coerce.date().nullable(),
-  name: z.string(),
-  basePrice: z.number().positive(),
-  virtualPrice: z.number().positive(),
+  name: z.string().trim().max(255),
+  basePrice: z.number().min(0),
+  virtualPrice: z.number().min(0),
   brandId: z.number(),
   images: z.array(z.string()),
   variants: VariantsSchema,

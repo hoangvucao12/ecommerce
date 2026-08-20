@@ -17,19 +17,24 @@ export class ProductRepository {
   async list(
     query: GetProductQueryType,
     languageId: string,
+    createdById?: number,
+    isPublic?: boolean,
   ): Promise<GetProductsResponseType> {
     const skip = (query.page - 1) * query.limit;
     const take = query.limit;
+
+    const where = {
+      deletedAt: null,
+      createdById: createdById ? createdById : undefined,
+      publishAt: isPublic ? { lte: new Date(), not: null } : undefined,
+    };
+
     const [totalItems, products] = await Promise.all([
       this.prismaService.product.count({
-        where: {
-          deletedAt: null,
-        },
+        where,
       }),
       this.prismaService.product.findMany({
-        where: {
-          deletedAt: null,
-        },
+        where,
         include: {
           productTranslations: {
             where:
@@ -54,53 +59,64 @@ export class ProductRepository {
     };
   }
 
-  findById(
-    productId: number,
-    languageId: string,
-  ): Promise<GetProductDetailResponseType | null> {
+  findById(productId: number, languageId: string): Promise<ProductType | null> {
     return this.prismaService.product.findUnique({
       where: {
         id: productId,
         deletedAt: null,
       },
-      include: {
-        productTranslations: {
-          where:
-            languageId === ALL_LANGUAGE_CODE
-              ? { deletedAt: null }
-              : { deletedAt: null, languageId },
-        },
-        skus: {
-          where: {
-            deletedAt: null,
-          },
-        },
-        brand: {
-          include: {
-            brandTranslations: {
-              where:
-                languageId === ALL_LANGUAGE_CODE
-                  ? { deletedAt: null }
-                  : { deletedAt: null, languageId },
-            },
-          },
-        },
-        categories: {
-          where: {
-            deletedAt: null,
-          },
-          include: {
-            categoryTranslations: {
-              where:
-                languageId === ALL_LANGUAGE_CODE
-                  ? { deletedAt: null }
-                  : { deletedAt: null, languageId },
-            },
-          },
-        },
-      },
     });
   }
+
+  // getDetail(
+  //   productId: number,
+  //   languageId: string,
+  //   isPublic?: boolean,
+  // ): Promise<GetProductDetailResponseType | null> {
+  //   return this.prismaService.product.findUnique({
+  //     where: {
+  //       id: productId,
+  //       deletedAt: null,
+  //       publishAt: isPublic ? { lte: new Date(), not: null } : undefined,
+  //     },
+  //     include: {
+  //       productTranslations: {
+  //         where:
+  //           languageId === ALL_LANGUAGE_CODE
+  //             ? { deletedAt: null }
+  //             : { deletedAt: null, languageId },
+  //       },
+  //       skus: {
+  //         where: {
+  //           deletedAt: null,
+  //         },
+  //       },
+  //       brand: {
+  //         include: {
+  //           brandTranslations: {
+  //             where:
+  //               languageId === ALL_LANGUAGE_CODE
+  //                 ? { deletedAt: null }
+  //                 : { deletedAt: null, languageId },
+  //           },
+  //         },
+  //       },
+  //       categories: {
+  //         where: {
+  //           deletedAt: null,
+  //         },
+  //         include: {
+  //           categoryTranslations: {
+  //             where:
+  //               languageId === ALL_LANGUAGE_CODE
+  //                 ? { deletedAt: null }
+  //                 : { deletedAt: null, languageId },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+  // }
 
   async delete(productId: number): Promise<ProductType> {
     const [product] = await Promise.all([

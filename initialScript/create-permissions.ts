@@ -10,6 +10,14 @@ import { RoleName } from "src/shared/constants/role.constant";
 
 const prismaService = new PrismaService();
 
+const SellerModule = [
+  "AUTH",
+  "PRODUCT-TRANSLATION",
+  "PROFILE",
+  "MANAGE-PRODUCT",
+  "MEDIA",
+];
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   await app.listen(3000);
@@ -88,23 +96,42 @@ async function bootstrap() {
     where: { deletedAt: null },
   });
 
-  const adminRole = await prismaService.role.findFirstOrThrow({
-    where: { name: RoleName.Admin, deletedAt: null },
+  const adminPermissionIds = updatedPermissionsInDb.map((permission) => ({
+    id: permission.id,
+  }));
+
+  const sellerPermissionIds = updatedPermissionsInDb
+    .filter((permission) => SellerModule.includes(permission.module))
+    .map((permission) => ({
+      id: permission.id,
+    }));
+
+  await Promise.all([
+    updateRole(adminPermissionIds, RoleName.Admin),
+    updateRole(sellerPermissionIds, RoleName.Seller),
+  ]);
+
+  process.exit(0);
+}
+
+const updateRole = async (
+  permissionIds: { id: number }[],
+  roleName: string,
+) => {
+  const role = await prismaService.role.findFirstOrThrow({
+    where: { name: roleName, deletedAt: null },
   });
 
   await prismaService.role.update({
     where: {
-      id: adminRole.id,
+      id: role.id,
     },
     data: {
       permissions: {
-        set: updatedPermissionsInDb.map((permission) => ({
-          id: permission.id,
-        })),
+        set: permissionIds,
       },
     },
   });
+};
 
-  process.exit(0);
-}
 bootstrap();
